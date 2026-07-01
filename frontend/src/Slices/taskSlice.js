@@ -1,21 +1,37 @@
-import {createSlice} from '@reduxjs/toolkit'
+import { createSlice } from '@reduxjs/toolkit'
 
 
-const initialState={
-    tasks:[]
+const initialState = {
+    tasks: []
 }
 
 
-export const TaskSlice=createSlice({
-    name:"tasks",
+export const TaskSlice = createSlice({
+    name: "tasks",
     initialState,
-    reducers:{
-        getUser:(state,action)=>{
-            state.tasks=[...state.tasks,action.payload]
+    reducers: {
+
+        createUser: (state, action) => {
+            state.tasks.push(action.payload)
+            // state.tasks=[...state.tasks,action.payload]
+        },
+        deleteUser: (state, action) => {
+            state.tasks = state.tasks.filter((task) => task.id != action.payload)
+        },
+        updateUser: (state, action) => {
+            state.tasks = state.tasks.map((task) => {
+                //update the data
+                if (task.id == action.payload.id) {
+                    return action.payload
+                }
+                //else return the previous data
+                return task;
+            })
+
         }
     }
 })
 
-export const {getUser}=TaskSlice.actions;
+export const { deleteUser, createUser, updateUser } = TaskSlice.actions;
 
 export default TaskSlice.reducer;

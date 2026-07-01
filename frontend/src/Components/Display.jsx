@@ -5,9 +5,18 @@ import { CiCalendar } from "react-icons/ci";
 import { FaPencilAlt } from "react-icons/fa";
 import { Link } from "react-router-dom"
 import axios from 'axios';
+
+
+
+import {useSelector} from "react-redux";
 const Display = () => {
+      const task = useSelector((state) => state.tasks.tasks);
+
+    console.log("data from redux:", task);
 
   const [data, setData] = useState(null);
+
+
 
   const handleDelete = async (id) => {
   const isConfirmed = window.confirm(
@@ -33,6 +42,8 @@ const Display = () => {
 };
 
   useEffect(()=>{
+
+
     
     const getData=async()=>{
       const res=await axios.get("http://localhost:5000/");
@@ -66,12 +77,13 @@ const Display = () => {
   </div>
 
   <div className='flex gap-3 flex-wrap ml-4'>
-    <div className='w-28 h-10 bg-yellow-600 rounded-full flex items-center justify-center gap-2'>
+    <div className={`w-28 h-10  rounded-full flex items-center justify-center gap-2 
+    ${d.priority=='high'?'bg-red-600':d.priority=='medium'?'bg-yellow-600':'bg-green-600'}`}>
       <MdPriorityHigh />
       <span>{d.priority}</span>
     </div>
 
-    <div className='w-28 h-10 bg-yellow-600 rounded-full flex items-center justify-center gap-2'>
+    <div className={`w-28 h-10  rounded-full flex items-center justify-center gap-2 ${d.status=='pending'?'bg-gray-600':'bg-green-600'}`}>
       <GrFlag />
       <span>{d.status}</span>
     </div>

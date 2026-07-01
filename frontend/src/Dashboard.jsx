@@ -15,7 +15,7 @@ const Dashboard = () => {
       setData(res.data);
     }
     getData();
-  },[data])
+  },[])
   return (
     <div className='w-screen h-screen flex flex-col gap-3 text-base border px-4 py-5'>
 

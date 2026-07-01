@@ -14,15 +14,19 @@ const Update = () => {
 
   useEffect(()=>{
     const getData=async()=>{
+      
       const res=await axios.get(`http://localhost:5000/task/${id}`);
       console.log(res.data[0]);
       setData(res.data[0]);
     }
     getData();
   },[])
-
+  
   const handleSubmit = async(event) => {
     event.preventDefault();
+    //redux
+    // Data.id
+    //
     console.log(Data);
     const res=await axios.put(`http://localhost:5000/update/${id}`,Data);
     console.log(res.data);
