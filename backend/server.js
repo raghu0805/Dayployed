@@ -3,7 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 
-import taskRoutes from "./routes/tasks.js";
+import taskRoutes from "./routes/taskRoutes.js";
 import authRoutes from "./routes/authRoutes.js"
 import ConnectDB from "./config/db.js";
 import verifyToken from "./middleware/verifyToken.js";

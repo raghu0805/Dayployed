@@ -1,15 +1,30 @@
 import jwt from "jsonwebtoken";
+import User from "../models/User";
 
 const verifyToken = (req, res, next) => {
-    const token = req.cookies.token;
+    const token = req.cookies.accesstoken;
+
     if (!token) {
-        return res.send("token is not present");
+        return res.status(401).json({
+            message: "Token not found"
+        });
     }
-    // return res.send("token is not present");
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    // console.log("Decoded Input", decoded);
-    req.author_id=decoded.author_id;
-    next();
-}
+
+    try {
+        const decoded = jwt.verify(accesstoken, process.env.JWT_SECRET);
+
+        req.author_id = decoded.author_id;
+
+        next();
+    } catch (err) {
+        return res.status(401).json({
+            message: "Invalid or expired token"
+        });
+    }
+};
+
+
+
+
 
 export default verifyToken;
