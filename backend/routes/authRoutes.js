@@ -36,7 +36,7 @@ router.post("/signup", async (req, res) => {
 
     //create the resource
     const user = new User({ username, email, password: hashPassword });
-    console.log(user);
+    // console.log("Created user details:",user);
     if (!user) {
         return res.status(400).json({ message: "Error in creating document in mongodb" });
     }
@@ -51,14 +51,14 @@ router.post("/login", async (req, res) => {
     const { email,password } = req.body;
 
     const user=await User.findOne({email});
-    console.log("User detail:",user);
+    console.log("User detail:",user,user);
     
     const hashPassword=user.password;
 
     const result = await bcrypt.compare(password, hashPassword);
     if (result) {
-        const token=jwt.sign({"username":user.username,"email":user.email},process.env.JWT_SECRET,{expiresIn:"3d"});
-        console.log(token);
+        const token=jwt.sign({"author_id":user._id.toString(),"username":user.username,"email":user.email},process.env.JWT_SECRET,{expiresIn:"3d"});
+        console.log("token-----------",token);
 
 
 

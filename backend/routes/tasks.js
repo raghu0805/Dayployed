@@ -1,65 +1,84 @@
 import express from "express";
 import User from "../models/User.js"
+import Task from "../models/Tasks.js"
 const router = express.Router();
 
 router.get("/", async (req, res) => {
-
     //fetch the data
-    const result = await pool.query("select * from tasks");
-    return res.status(200).json(result.rows);
+    console.log(req.author_id);
+    const result = await Task.find({ author: req.author_id });
+    console.log("result from get route:", result);
+    return res.status(200).json(result);
 });
 
 
 
 router.get("/task/:id", async (req, res) => {
+    //id is the task_id
     const { id } = req.params;
+
+    console.log(id);
     //fetch the data
-    const result = await pool.query("select * from tasks where id=$1", [id]);
-    return res.status(200).json(result.rows);
+    const result = await Task.find({ _id: id });
+    console.log(result);
+    return res.status(200).json(result);
 });
 
-
+//to create a task
 router.post("/create", async (req, res) => {
 
-    const { task_name, task_description } = req.body;
+    const { title, description } = req.body;
 
-    const result = await pool.query(
-        "INSERT INTO tasks(title, description) VALUES($1, $2)",
-        [task_name, task_description]);
 
-    if (result.rowCount < 1) {
-        return res.status(500).json({ message: "record is not created successful" })
+    if (!title) {
+        return res.status(400).json({ message: "Please enter task name" })
+    }
+    if (!description) {
+        return res.status(400).json({ message: "Please enter task description" })
     }
 
-    const data = await pool.query("select * from tasks");
-    return res.status(201).json({ message: "task created successfully", data: data.rows });
+
+    const task = new Task({ title, description, author: req.author_id });
+    if (!task) {
+        return res.status(400).json({ message: "Unable to create task!" });
+    }
+
+    await task.save();
+    return res.status(201).json({ message: "Resource created successfully" });
 })
 
 
 router.put("/update/:id", async (req, res) => {
     const { id } = req.params;
     const { title, description } = req.body;
+    console.log("The details:", id, title, description, req.author_id);
+    const task = await Task.findById(id);
 
-    console.log("the data from frontend:" + id, title, description);
-    const result = await pool.query(
-        "UPDATE tasks SET title = $1, description = $2 WHERE id = $3",
-        [title, description, id]
-    );
-
-    if (result.rowCount < 1) {
-        return res.status(404).json({ message: "task is not found" });
+    if (!task) {
+        return res.status(400).json({ message: "The task doesn't exist!" });
     }
+    const updatedstatus = await Task.updateOne({ _id: id, author: req.author_id }, { title, description }, { returnDocument: "after" });
+    console.log("Updated result:", updatedstatus);
+    if (updatedstatus.modifiedCount == 0) {
+        return res.status(400).json({ message: "task is not updated!" });
+    }
+
     return res.status(200).json({ message: "task updated successfully" });
 });
 
 
-router.delete("/delete", async (req, res) => {
-    const { task_id } = req.body;
-    const result = await pool.query("DELETE FROM tasks WHERE id=$1", [task_id]);
-    if (result.rowCount < 1) {
-        return res.status(404).json({ message: "task is not found" });
+router.delete("/delete/:id", async (req, res) => {
+    const { id } = req.params;
+
+    const task = await Task.findOne({ _id: id });
+    if (!task) {
+        return res.status(400).json({ message: "task doen't exist. can't delete!" });
     }
-    return res.status(200).json({ message: "task deleted successfully" });
+
+    await Task.deleteOne({ _id: id });
+    return res.status(200).json({ message: "Task deleted successfully" });
+
+
 })
 
 

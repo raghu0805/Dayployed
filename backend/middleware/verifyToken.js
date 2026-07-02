@@ -5,9 +5,10 @@ const verifyToken = (req, res, next) => {
     if (!token) {
         return res.send("token is not present");
     }
-        return res.send("token is not present");
-    const compare=jwt.verify(token,process.env.JWT_SECRET);
-    console.log(compare);
+    // return res.send("token is not present");
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // console.log("Decoded Input", decoded);
+    req.author_id=decoded.author_id;
     next();
 }
 
