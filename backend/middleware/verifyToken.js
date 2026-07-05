@@ -1,17 +1,19 @@
 import jwt from "jsonwebtoken";
-import User from "../models/User";
+
 
 const verifyToken = (req, res, next) => {
-    const token = req.cookies.accesstoken;
+    const accessToken = req.cookies.accessToken;
 
-    if (!token) {
+    console.log(accessToken);
+
+    if (!accessToken) {
         return res.status(401).json({
             message: "Token not found"
         });
     }
 
     try {
-        const decoded = jwt.verify(accesstoken, process.env.JWT_SECRET);
+        const decoded = jwt.verify(accessToken, process.env.ACCESSTOKEN_SECRET);
 
         req.author_id = decoded.author_id;
 
@@ -22,9 +24,5 @@ const verifyToken = (req, res, next) => {
         });
     }
 };
-
-
-
-
 
 export default verifyToken;

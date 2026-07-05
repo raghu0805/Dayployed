@@ -18,7 +18,7 @@ app.use(cors(
     { origin: "http://localhost:5173" }
 ));
 app.use("/api/v1",verifyToken, taskRoutes);
-app.use("/auth",verifyToken, authRoutes);
+app.use("/auth", authRoutes);
 
 app.get("/test-cookie",verifyToken,(req,res)=>{
     return res.send("The response I got successfully");

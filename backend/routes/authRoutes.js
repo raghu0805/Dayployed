@@ -27,12 +27,6 @@ router.post("/signup", async (req, res) => {
         }
 
 
-        //create access token and session token.
-
-        const accessToken = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: "15min" });
-        console.log("accesstoken-----------", accessToken);
-        const refreshToken = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: "30d" });
-        console.log("refreshtoken-----------", refreshToken);
 
         //hashing the passwor
         //creating salt
@@ -42,19 +36,31 @@ router.post("/signup", async (req, res) => {
         const hashPassword = await bcrypt.hash(password, salt);
         console.log(hashPassword);
 
-
-        const hashRefreshToken = await bcrypt.hash(refreshToken, salt);
-        console.log("refresh token:", refreshToken, "hashed refresh token:", hashRefreshToken);
-
         //create the resource
-        const user = new User({ username, email, password: hashPassword, refreshToken: hashRefreshToken });
+        const user = new User({ username, email, password: hashPassword });
+        await user.save();
+
+
         // console.log("Created user details:",user);
         if (!user) {
             return res.status(400).json({ message: "Error in creating document in mongodb" });
         }
-        await user.save();
+
+
+        const accessToken = jwt.sign({ _id: user._id }, process.env.ACCESSTOKEN_SECRET, { expiresIn: process.env.ACCESSTOKEN_EXPIRY });
+        console.log("accesstoken-----------", accessToken);
+        const refreshToken = jwt.sign({ _id: user._id }, process.env.REFRESHTOKEN_SECRET, { expiresIn: process.env.REFRESHTOKEN_EXPIRY });
+        console.log("refreshtoken-----------", refreshToken);
+
+
+        const hashRefreshToken = await bcrypt.hash(refreshToken, salt);
+
+        console.log("User *********:", user._id);
+        //create access token and session token.
+        await User.findByIdAndUpdate({ "_id":user._id }, { refreshToken: hashRefreshToken })
+
         res.cookie("accessToken", accessToken, {
-            maxAge: 1000 * 60 * 60 * 24 * 30,
+            maxAge: 1000 * 60 * 15,
             httpOnly: true,
             secure: false,
             sameSite: "strict"
@@ -89,30 +95,35 @@ router.post("/login", async (req, res) => {
 
 
         const user = await User.findOne({ email });
-        console.log("User detail:", user, user);
+        if (!user) {
+            return res.status(404).json({
+                message: "User not found"
+            });
+        }
+        console.log("User detail:", user);
 
         const hashPassword = user.password;
 
         const result = await bcrypt.compare(password, hashPassword);
         if (result) {
 
-                    const accessToken = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: "15min" });
-        console.log("accesstoken-----------", accessToken);
-        const refreshToken = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: "30d" });
-        console.log("refreshtoken-----------", refreshToken);
+            const accessToken = jwt.sign({ _id: user._id }, process.env.ACCESSTOKEN_SECRET, { expiresIn: process.env.ACCESSTOKEN_EXPIRY });
+            console.log("accesstoken-----------", accessToken);
+            const refreshToken = jwt.sign({ _id: user._id }, process.env.REFRESHTOKEN_SECRET, { expiresIn: process.env.REFRESHTOKEN_EXPIRY });
+            console.log("refreshtoken-----------", refreshToken);
 
 
-                //creating salt
-        const salt = await bcrypt.genSalt(10);
-        // console.log(salt);
+            //creating salt
+            const salt = await bcrypt.genSalt(10);
+            // console.log(salt);
 
-        const hashRefreshToken = await bcrypt.hash(refreshToken, salt);
-        const update=await User.updateOne({email},{refreshToken:hashRefreshToken})
+            const hashRefreshToken = await bcrypt.hash(refreshToken, salt);
+            await User.updateOne({ email }, { refreshToken: hashRefreshToken })
 
 
 
             res.cookie("accessToken", accessToken, {
-                maxAge: 1000 * 60 * 60 * 24 * 30,
+                maxAge: 1000 * 60 * 15,
                 httpOnly: true,
                 secure: false,
                 sameSite: "strict"
@@ -137,24 +148,76 @@ router.post("/login", async (req, res) => {
 })
 
 
-router.post("/refresh",async(req,res)=>{
+
+
+router.post("/logout",async(req,res)=>{
     try {
-        const refreshToken=req.cookies.refreshToken;
-        const decoded=jwt.verify(refreshToken,process.env.JWT_SECRET);
+
+            const refreshToken=req.cookies.refreshToken;
+    console.log(refreshToken); 
+
+    const decode=jwt.verify(refreshToken,process.env.REFRESHTOKEN_SECRET);
+    console.log(decode);
 
 
-        const accessToken=jwt.sign({ email: decoded.email },process.env.JWT_SECRET,{expiresIn:"15m"});
-            res.cookie("accessToken", accessToken, {
-                maxAge: 1000 * 60 * 60 * 24 * 30,
-                httpOnly: true,
-                secure: false,
-                sameSite: "strict"
 
-            });
-            return res.status(200).json({message:"Access token generated successfully"});
+
+
+    await User.updateOne({_id:decode._id},{
+        refreshToken:null
+    })
+    res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
+
+    res.status(200).json({message:"Logout successfully"});
         
     } catch (error) {
-               return res.status(401).json({
+            return res.status(401).json({
+            message: "Logout failure"
+        });
+    }
+
+})
+
+
+router.post("/refresh", async (req, res) => {
+    try {
+        const refreshToken = req.cookies.refreshToken;
+        if (!refreshToken) {
+            return res.status(401).json({
+                message: "Refresh token missing"
+            });
+        }
+        const decoded = jwt.verify(refreshToken, process.env.REFRESHTOKEN_SECRET);
+        console.log("decoded:", decoded);
+
+        const user = await User.findOne({ "_id": decoded._id });
+        if (!user) {
+            return res.status(404).json({
+                message: "User not found"
+            });
+        }
+        console.log("the data:", user);
+
+        const isVerified = await bcrypt.compare(refreshToken, user.refreshToken);
+        if (!isVerified) {
+            return res.status(401).json({ message: "Session mismatch! the token from cookie and db mismatch!" });
+
+        }
+        const accessToken = jwt.sign({ _id: user._id }, process.env.ACCESSTOKEN_SECRET, { expiresIn: process.env.ACCESSTOKEN_EXPIRY });
+        res.cookie("accessToken", accessToken, {
+            maxAge: 1000 * 60 * 15,
+            httpOnly: true,
+            secure: false,
+            sameSite: "strict"
+        });
+
+
+
+        return res.status(200).json({ message: "Access token generated successfully" });
+
+    } catch (error) {
+        return res.status(401).json({
             message: "Invalid or expired token"
         });
     }
