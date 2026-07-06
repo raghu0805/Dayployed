@@ -6,7 +6,7 @@ const router = express.Router();
 // Get all tasks of logged-in user
 router.get("/", async (req, res) => {
     try {
-        const tasks = await Task.find({ author: req.author_id });
+        const tasks = await Task.find({ owner: req.owner_id });
 
         return res.status(200).json(tasks);
 
@@ -26,7 +26,7 @@ router.get("/task/:id", async (req, res) => {
 
         const task = await Task.findOne({
             _id: id,
-            author: req.author_id
+            owner: req.owner_id
         });
 
         if (!task) {
@@ -64,10 +64,12 @@ router.post("/create", async (req, res) => {
             });
         }
 
+        console.log("Onwer id:", req.owner_id);
+
         await Task.create({
             title,
             description,
-            author: req.author_id
+            owner: req.owner_id
         });
 
         return res.status(201).json({
@@ -90,34 +92,49 @@ router.put("/update/:id", async (req, res) => {
         const { id } = req.params;
         const { title, description } = req.body;
 
-        const result = await Task.updateOne(
-            {
-                _id: id,
-                author: req.author_id
-            },
-            {
-                $set: {
-                    title,
-                    description
-                }
-            }
-        );
 
-        if (result.matchedCount === 0) {
-            return res.status(404).json({
-                message: "Task not found."
-            });
+        const task = await Task.findById(id);
+        if (!task) {
+            return res.status(404).json({ message: "the task not found!" })
         }
 
-        if (result.modifiedCount === 0) {
+
+        if (task.owner.equals(req.owner_id)) {
+            task.title = title;
+            task.description = description;
+
+            await task.save();
             return res.status(200).json({
-                message: "No changes were made."
+                message: "Task updated successfully."
             });
         }
 
-        return res.status(200).json({
-            message: "Task updated successfully."
-        });
+        // const result = await Task.updateOne(
+        //     {
+        //         _id: id,
+        //         owner: req.owner_id
+        //     },
+        //     {
+        //         $set: {
+        //             title,
+        //             description
+        //         }
+        //     }
+        // );
+
+        // if (result.matchedCount === 0) {
+        //     return res.status(404).json({
+        //         message: "Task not found."
+        //     });
+        // }
+
+        // if (result.modifiedCount === 0) {
+        //     return res.status(200).json({
+        //         message: "No changes were made."
+        //     });
+        // }
+
+
 
     } catch (err) {
         console.error(err);
@@ -132,22 +149,34 @@ router.put("/update/:id", async (req, res) => {
 router.delete("/delete/:id", async (req, res) => {
     try {
 
+
         const { id } = req.params;
 
-        const result = await Task.deleteOne({
-            _id: id,
-            author: req.author_id
-        });
+        const task = await Task.findById(id);
 
-        if (result.deletedCount === 0) {
-            return res.status(404).json({
-                message: "Task not found."
+        if (!task) {
+            return res.status(404).json({ message: "the task not found!" })
+        }
+
+        if (task.owner.equals(req.owner_id)) {
+            await task.deleteOne();
+
+            return res.status(200).json({
+                message: "Task deleted successfully."
             });
         }
 
-        return res.status(200).json({
-            message: "Task deleted successfully."
-        });
+        return res.status(403).json({ message: "Resource Ownership Mismatch!" })
+        // const result = await Task.deleteOne({
+        //     _id: id,
+        //     owner: req.owner_id
+        // });
+
+        // if (result.deletedCount === 0) {
+        //     return res.status(404).json({
+        //         message: "Task not found."
+        //     });
+        // }
 
     } catch (err) {
         console.error(err);

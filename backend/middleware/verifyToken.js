@@ -14,8 +14,9 @@ const verifyToken = (req, res, next) => {
 
     try {
         const decoded = jwt.verify(accessToken, process.env.ACCESSTOKEN_SECRET);
-
-        req.author_id = decoded.author_id;
+        console.log("the decoded one:",decoded);
+        req.owner_id = decoded._id;
+        console.log(req.owner_id,"the one owner_id");
 
         next();
     } catch (err) {

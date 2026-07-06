@@ -19,7 +19,7 @@ const TaskSchema = new mongoose.Schema({
         default: "low"
     },
 
-    author: {
+    owner: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true

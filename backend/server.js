@@ -5,7 +5,9 @@ import dotenv from "dotenv";
 
 import taskRoutes from "./routes/taskRoutes.js";
 import authRoutes from "./routes/authRoutes.js"
+import adminRoutes from "./routes/adminRoutes.js";
 import ConnectDB from "./config/db.js";
+import  authorize  from "./middleware/authorize.js";
 import verifyToken from "./middleware/verifyToken.js";
 const res = dotenv.config();
 ConnectDB();
@@ -19,6 +21,7 @@ app.use(cors(
 ));
 app.use("/api/v1",verifyToken, taskRoutes);
 app.use("/auth", authRoutes);
+app.use("/admin",authorize("admin"),adminRoutes)
 
 app.get("/test-cookie",verifyToken,(req,res)=>{
     return res.send("The response I got successfully");
