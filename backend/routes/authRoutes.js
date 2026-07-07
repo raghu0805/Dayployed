@@ -47,9 +47,9 @@ router.post("/signup", async (req, res) => {
         }
 
 
-        const accessToken = jwt.sign({ _id: user._id,role:user.role }, process.env.ACCESSTOKEN_SECRET, { expiresIn: process.env.ACCESSTOKEN_EXPIRY });
+        const accessToken = jwt.sign({ _id: user._id, role: user.role }, process.env.ACCESSTOKEN_SECRET, { expiresIn: process.env.ACCESSTOKEN_EXPIRY });
         console.log("accesstoken-----------", accessToken);
-        const refreshToken = jwt.sign({ _id: user._id,role:user.role }, process.env.REFRESHTOKEN_SECRET, { expiresIn: process.env.REFRESHTOKEN_EXPIRY });
+        const refreshToken = jwt.sign({ _id: user._id, role: user.role }, process.env.REFRESHTOKEN_SECRET, { expiresIn: process.env.REFRESHTOKEN_EXPIRY });
         console.log("refreshtoken-----------", refreshToken);
 
 
@@ -57,7 +57,7 @@ router.post("/signup", async (req, res) => {
 
         console.log("User *********:", user._id);
         //create access token and session token.
-        await User.findByIdAndUpdate({ "_id":user._id }, { refreshToken: hashRefreshToken })
+        await User.findByIdAndUpdate({ "_id": user._id }, { refreshToken: hashRefreshToken })
 
         res.cookie("accessToken", accessToken, {
             maxAge: 1000 * 60 * 15,
@@ -107,9 +107,9 @@ router.post("/login", async (req, res) => {
         const result = await bcrypt.compare(password, hashPassword);
         if (result) {
 
-            const accessToken = jwt.sign({ _id: user._id,role:user.role }, process.env.ACCESSTOKEN_SECRET, { expiresIn: process.env.ACCESSTOKEN_EXPIRY });
+            const accessToken = jwt.sign({ _id: user._id, role: user.role }, process.env.ACCESSTOKEN_SECRET, { expiresIn: process.env.ACCESSTOKEN_EXPIRY });
             console.log("accesstoken-----------", accessToken);
-            const refreshToken = jwt.sign({ _id: user._id,role:user.role }, process.env.REFRESHTOKEN_SECRET, { expiresIn: process.env.REFRESHTOKEN_EXPIRY });
+            const refreshToken = jwt.sign({ _id: user._id, role: user.role }, process.env.REFRESHTOKEN_SECRET, { expiresIn: process.env.REFRESHTOKEN_EXPIRY });
             console.log("refreshtoken-----------", refreshToken);
 
 
@@ -150,29 +150,29 @@ router.post("/login", async (req, res) => {
 
 
 
-router.post("/logout",async(req,res)=>{
+router.post("/logout", async (req, res) => {
     try {
 
-            const refreshToken=req.cookies.refreshToken;
-    console.log(refreshToken); 
+        const refreshToken = req.cookies.refreshToken;
+        console.log(refreshToken);
 
-    const decode=jwt.verify(refreshToken,process.env.REFRESHTOKEN_SECRET);
-    console.log(decode);
-
-
+        const decode = jwt.verify(refreshToken, process.env.REFRESHTOKEN_SECRET);
+        console.log(decode);
 
 
 
-    await User.updateOne({_id:decode._id},{
-        refreshToken:null
-    })
-    res.clearCookie("accessToken");
-    res.clearCookie("refreshToken");
 
-    res.status(200).json({message:"Logout successfully"});
-        
+
+        await User.updateOne({ _id: decode._id }, {
+            refreshToken: null
+        })
+        res.clearCookie("accessToken");
+        res.clearCookie("refreshToken");
+
+        res.status(200).json({ message: "Logout successfully" });
+
     } catch (error) {
-            return res.status(401).json({
+        return res.status(401).json({
             message: "Logout failure"
         });
     }
@@ -204,7 +204,7 @@ router.post("/refresh", async (req, res) => {
             return res.status(401).json({ message: "Session mismatch! the token from cookie and db mismatch!" });
 
         }
-        const accessToken = jwt.sign({ _id: user._id , role:user.role}, process.env.ACCESSTOKEN_SECRET, { expiresIn: process.env.ACCESSTOKEN_EXPIRY });
+        const accessToken = jwt.sign({ _id: user._id, role: user.role }, process.env.ACCESSTOKEN_SECRET, { expiresIn: process.env.ACCESSTOKEN_EXPIRY });
         res.cookie("accessToken", accessToken, {
             maxAge: 1000 * 60 * 15,
             httpOnly: true,

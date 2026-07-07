@@ -1,5 +1,7 @@
 import express from "express";
 import Task from "../models/Tasks.js";
+import validate from "../middleware/validate.js";
+import { createTaskSchema, updateTaskSchema } from "../schema-zod/task.schema.js";
 
 const router = express.Router();
 
@@ -47,24 +49,11 @@ router.get("/task/:id", async (req, res) => {
 });
 
 // Create task
-router.post("/create", async (req, res) => {
+router.post("/create",validate(createTaskSchema), async (req, res) => {
     try {
 
         const { title, description } = req.body;
 
-        if (!title) {
-            return res.status(400).json({
-                message: "Please enter task title."
-            });
-        }
-
-        if (!description) {
-            return res.status(400).json({
-                message: "Please enter task description."
-            });
-        }
-
-        console.log("Onwer id:", req.owner_id);
 
         await Task.create({
             title,
@@ -86,11 +75,13 @@ router.post("/create", async (req, res) => {
 });
 
 // Update task
-router.put("/update/:id", async (req, res) => {
+router.put("/update/:id",validate(updateTaskSchema), async (req, res) => {
     try {
 
         const { id } = req.params;
         const { title, description } = req.body;
+
+        console.log("/////////req.body:",req.body);
 
 
         const task = await Task.findById(id);
@@ -148,8 +139,6 @@ router.put("/update/:id", async (req, res) => {
 // Delete task
 router.delete("/delete/:id", async (req, res) => {
     try {
-
-
         const { id } = req.params;
 
         const task = await Task.findById(id);
